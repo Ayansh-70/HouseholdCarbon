@@ -59,20 +59,40 @@ Prioritize tips for their highest emission category.
 Return ONLY a valid JSON array of strings. Do not include markdown formatting like \`\`\`json. Just the array.`;
 
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" }); // Fast and cheap model for this
+    // Note: this model was chosen for stability and availability over raw capability, since the insights-generation task here is simple (short structured output, no complex reasoning needed). If this specific model is ever deprecated, check https://ai.google.dev/gemini-api/docs/models for the current GA-tier flash/flash-lite model and prefer GA over preview/experimental tiers for the same reason.
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" }); // Fast and cheap model for this
     
-    // Set a timeout using AbortController (available in Node.js)
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 8000); // 8s timeout
+    let result;
+    try {
+      // Set a timeout using AbortController (available in Node.js)
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 8000); // 8s timeout
 
-    const result = await model.generateContent({
-      contents: [{ role: 'user', parts: [{ text: prompt }] }],
-      generationConfig: {
-        temperature: 0.2,
+      result = await model.generateContent({
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        generationConfig: {
+          temperature: 0.2,
+        }
+      }, { signal: controller.signal });
+      clearTimeout(timeoutId);
+    } catch (apiError) {
+      if (apiError.message && apiError.message.includes('503')) {
+        console.warn("Gemini API returned 503. Retrying once in 1.5s...");
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
+        const retryController = new AbortController();
+        const retryTimeoutId = setTimeout(() => retryController.abort(), 8000);
+        result = await model.generateContent({
+          contents: [{ role: 'user', parts: [{ text: prompt }] }],
+          generationConfig: {
+            temperature: 0.2,
+          }
+        }, { signal: retryController.signal });
+        clearTimeout(retryTimeoutId);
+      } else {
+        throw apiError;
       }
-    }, { signal: controller.signal });
-
-    clearTimeout(timeoutId);
+    }
 
     const responseText = result.response.text().trim();
     

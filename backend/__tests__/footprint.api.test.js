@@ -6,6 +6,9 @@ jest.mock('../services/gemini.service', () => ({
   getPersonalizedInsights: jest.fn()
 }));
 
+// Mock the rate limiter so tests don't fail with 429 Too Many Requests
+jest.mock('express-rate-limit', () => () => (req, res, next) => next());
+
 const { getPersonalizedInsights } = require('../services/gemini.service');
 
 describe('POST /api/footprint', () => {
@@ -114,6 +117,31 @@ describe('POST /api/footprint', () => {
 
     expect(res.statusCode).toBe(400);
     expect(res.body.success).toBe(false);
+  });
+
+  it('should ACCEPT requests with valid localhost Origin', async () => {
+    getPersonalizedInsights.mockResolvedValue({ insights: [], source: 'fallback' });
+    const payload = { electricity: 100, naturalGas: 50, water: 1000, householdSize: 2, heatingFuel: 'gas' };
+    const res = await request(app)
+      .post('/api/footprint')
+      .set('Origin', 'http://localhost:5173')
+      .set('X-Forwarded-For', '127.0.0.99')
+      .send(payload);
+    
+    expect(res.statusCode).toBe(200);
+  });
+
+  it('should REJECT requests from attacker-controlled subdomains imitating localhost', async () => {
+    const payload = { electricity: 100, naturalGas: 50, water: 1000, householdSize: 2, heatingFuel: 'gas' };
+    const res = await request(app)
+      .post('/api/footprint')
+      .set('Origin', 'http://localhost.attacker-controlled-domain.com')
+      .set('X-Forwarded-For', '127.0.0.100')
+      .send(payload);
+    
+    // CORS throws an error which is caught by the global handler as 500
+    expect(res.statusCode).toBe(500);
+    expect(res.body.error).toBe("Internal Server Error");
   });
 
 });

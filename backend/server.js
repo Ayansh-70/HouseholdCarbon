@@ -18,10 +18,12 @@ const app = express();
 app.use(helmet());
 
 // Restrict CORS (in a real app, specify exact origins, here we allow dev origins and self)
-const allowedOrigins = ['http://localhost:5173', 'http://127.0.0.1:5173', process.env.FRONTEND_URL];
+const allowedOrigins = ['http://localhost:5173', 'http://127.0.0.1:5173', process.env.FRONTEND_URL].filter(Boolean);
+const localhostPattern = /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/;
+
 app.use(cors({
   origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin) || origin.startsWith('http://localhost')) {
+    if (!origin || allowedOrigins.includes(origin) || localhostPattern.test(origin)) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
@@ -35,21 +37,21 @@ app.use(express.json({ limit: '10kb' }));
 // API Routes
 app.use('/api/footprint', footprintRoutes);
 
+
+// Serve static frontend assets
+const staticPath = path.join(__dirname, 'public/dist');
+app.use(express.static(staticPath));
+
+// Fallback catch-all route below all API routes to serve index.html for frontend routing
+app.get(/(.*)/, (req, res) => {
+  res.sendFile(path.join(staticPath, 'index.html'));
+});
+
 // Global error handler so stack traces don't leak to client
 app.use((err, req, res, next) => {
   console.error("Unhandled error:", err.message);
   res.status(500).json({ success: false, error: "Internal Server Error" });
 });
-
-// Serve static frontend assets if in production
-if (process.env.NODE_ENV === 'production') {
-  const staticPath = path.join(__dirname, '../frontend/dist');
-  app.use(express.static(staticPath));
-
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(staticPath, 'index.html'));
-  });
-}
 
 const PORT = process.env.PORT || 3000;
 

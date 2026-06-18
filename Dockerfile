@@ -28,12 +28,8 @@ RUN npm install --prefix backend --production
 # Copy backend source
 COPY backend/ ./backend/
 
-# Copy built frontend from Stage 1 into the location expected by Express
-COPY --from=builder /app/frontend/dist ./frontend/dist
-
-# Expose the PORT (defaults to 3000 but Cloud Run provides it dynamically)
-ENV PORT=3000
-EXPOSE 3000
+# Copy built frontend from Stage 1 into the location expected by Express (public/dist)
+COPY --from=builder /app/frontend/dist ./backend/public/dist
 
 # Start the Express server
 WORKDIR /app/backend

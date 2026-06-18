@@ -1,0 +1,39 @@
+# Environment variables and secrets — NEVER commit real keys
+.env
+.env.local
+.env.*.local
+backend/.env
+frontend/.env
+*.pem
+*.key
+
+# Dependencies
+node_modules/
+frontend/node_modules/
+backend/node_modules/
+
+# Build output
+frontend/dist/
+backend/public/dist/
+build/
+dist/
+
+# Test artifacts and coverage
+coverage/
+frontend/coverage/
+backend/coverage/
+*.lcov
+
+# Logs
+*.log
+npm-debug.log*
+logs/
+
+# OS / editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Docker
+*.dockerignore.bak

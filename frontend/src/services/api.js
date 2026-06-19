@@ -31,3 +31,31 @@ export const fetchHistory = async () => {
 
   return result.data;
 };
+export const fetchHeatmapHistory = async () => {
+  const response = await fetch(`${API_BASE_URL}/history`);
+  const result = await response.json();
+
+  if (!response.ok || !result.success) {
+    throw new Error(result.error || 'Failed to fetch history');
+  }
+
+  return result.data;
+};
+
+export const fetchGoalCoaching = async (data) => {
+  const response = await fetch(`${API_BASE_URL}/goal-coaching`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data),
+  });
+
+  const result = await response.json();
+  
+  if (!response.ok || !result.success) {
+    throw new Error(result.error || 'Failed to fetch coaching');
+  }
+
+  return result.message;
+};

@@ -5,7 +5,9 @@ import * as api from '../services/api';
 
 // Mock the API layer
 vi.mock('../services/api', () => ({
-  submitFootprintData: vi.fn()
+  submitFootprintData: vi.fn(),
+  fetchHeatmapHistory: vi.fn().mockResolvedValue([]),
+  fetchGoalCoaching: vi.fn().mockResolvedValue("Mock coaching message")
 }));
 
 describe('Workspace Component', () => {

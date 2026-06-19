@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { submitFootprintData } from '../services/api';
+import { submitFootprintData, fetchHeatmapHistory } from '../services/api';
+import CarbonHeatmap from './CarbonHeatmap';
+import GoalTracker from './GoalTracker';
+import { useGoal } from '../hooks/useGoal';
 
 // Emission factors
 const EMISSION_FACTORS = {
@@ -67,6 +70,12 @@ function Workspace() {
   const [showBanner, setShowBanner] = useState(false);
   const [badgeText, setBadgeText] = useState("✦ GEMINI CONTEXT");
 
+  const [activeTab, setActiveTab] = useState('summary');
+  const [heatmapHistory, setHeatmapHistory] = useState([]);
+  const [submittedCarbon, setSubmittedCarbon] = useState(null);
+
+  const goalHook = useGoal(submittedCarbon);
+
   const animatedTotal = useAnimatedNumber(liveMetrics.total);
   const animatedPerCapita = useAnimatedNumber(liveMetrics.perCapita);
 
@@ -80,6 +89,14 @@ function Workspace() {
         setShowBanner(true);
       } catch(e) {}
     }
+
+    // Load heatmap history
+    fetchHeatmapHistory().then(data => {
+      setHeatmapHistory(data);
+      if (data.length > 0) {
+        setSubmittedCarbon(data[data.length - 1].totalCarbon);
+      }
+    }).catch(err => console.error("Failed to load history:", err));
   }, []);
 
   // Save to localStorage and calculate live metrics
@@ -179,6 +196,11 @@ function Workspace() {
 
       const data = await submitFootprintData(payload);
       setResult(data);
+      setSubmittedCarbon(data.calculation.totalCO2e);
+      
+      // Refresh heatmap data
+      const newHistory = await fetchHeatmapHistory();
+      setHeatmapHistory(newHistory);
       
       // Scroll to top of results
       document.querySelector('.bento-grid')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -305,6 +327,8 @@ function Workspace() {
               </button>
             </div>
           </form>
+
+          <GoalTracker hookState={goalHook} />
         </div>
         
         {/* Real-Time Premium Bento Presentation Output Panel Grid */}
@@ -350,64 +374,77 @@ function Workspace() {
           )}
           
           <div className="bento-card col-span-2 ai-advisor-card">
-            <div className="ai-badge" style={{ transition: 'all 0.3s' }}>{badgeText}</div>
-            <p className="card-label" style={{ color: '#06B6D4' }}>Strategic Reduction Model</p>
+            <div className="dashboard-tabs">
+              <button className={`tab-btn ${activeTab === 'summary' ? 'active' : ''}`} onClick={() => setActiveTab('summary')}>AI Summary</button>
+              <button className={`tab-btn ${activeTab === 'timeline' ? 'active' : ''}`} onClick={() => setActiveTab('timeline')}>Timeline</button>
+            </div>
             
-            {isLoading && (
-              <div className="spinner-container fade-in">
-                <div className="custom-spinner"></div>
-                <div className="spinner-text">{loadingText}</div>
-              </div>
-            )}
-            
-            {!isLoading && result && result.insights && (
-              <div className="ai-content fade-in">
-                {result.insightsSource === 'fallback' && (
-                  <p style={{ color: '#ef4444', marginBottom: '1rem', fontStyle: 'italic', fontSize: '0.85rem' }}>
-                    Showing general tips as AI insights are currently unavailable.
-                  </p>
+            {activeTab === 'summary' ? (
+              <>
+                <div className="ai-badge" style={{ transition: 'all 0.3s' }}>{badgeText}</div>
+                <p className="card-label" style={{ color: '#06B6D4' }}>Strategic Reduction Model</p>
+                
+                {isLoading && (
+                  <div className="spinner-container fade-in">
+                    <div className="custom-spinner"></div>
+                    <div className="spinner-text">{loadingText}</div>
+                  </div>
                 )}
                 
-                <p style={{ color: '#aaa', fontStyle: 'italic', fontSize: '0.875rem', marginBottom: '1.5rem' }}>
-                  {result.insights.summary}
-                </p>
+                {!isLoading && result && result.insights && (
+                  <div className="ai-content fade-in">
+                    {result.insightsSource === 'fallback' && (
+                      <p style={{ color: '#ef4444', marginBottom: '1rem', fontStyle: 'italic', fontSize: '0.85rem' }}>
+                        Showing general tips as AI insights are currently unavailable.
+                      </p>
+                    )}
+                    
+                    <p style={{ color: '#aaa', fontStyle: 'italic', fontSize: '0.875rem', marginBottom: '1.5rem' }}>
+                      {result.insights.summary}
+                    </p>
 
-                {result.insights.actions && result.insights.actions.map((action, idx) => {
-                  let borderColor = '#00c896'; // default
-                  if (action.category === 'electricity') borderColor = '#f5a623'; // yellow
-                  if (action.category === 'heating') borderColor = '#e85d4a'; // orange/red
-                  if (action.category === 'water') borderColor = '#3b82f6'; // blue
-                  
-                  return (
-                    <div key={idx} className="ai-action-card" style={{ borderLeftColor: borderColor }}>
-                      <div className="ai-action-header">
-                        <span className="ai-action-title">{action.title}</span>
-                        {action.estimated_saving_kg && (
-                          <span className="ai-action-badge">~{action.estimated_saving_kg} kg saved/mo</span>
-                        )}
-                      </div>
-                      <span className="ai-action-detail">{action.detail}</span>
-                    </div>
-                  );
-                })}
+                    {result.insights.actions && result.insights.actions.map((action, idx) => {
+                      let borderColor = '#00c896'; // default
+                      if (action.category === 'electricity') borderColor = '#f5a623'; // yellow
+                      if (action.category === 'heating') borderColor = '#e85d4a'; // orange/red
+                      if (action.category === 'water') borderColor = '#3b82f6'; // blue
+                      
+                      return (
+                        <div key={idx} className="ai-action-card" style={{ borderLeftColor: borderColor }}>
+                          <div className="ai-action-header">
+                            <span className="ai-action-title">{action.title}</span>
+                            {action.estimated_saving_kg && (
+                              <span className="ai-action-badge">~{action.estimated_saving_kg} kg saved/mo</span>
+                            )}
+                          </div>
+                          <span className="ai-action-detail">{action.detail}</span>
+                        </div>
+                      );
+                    })}
 
-                <p style={{ color: '#00c896', fontStyle: 'italic', fontSize: '0.813rem', marginTop: '1.5rem', textAlign: 'center' }}>
-                  {result.insights.encouragement}
-                </p>
-              </div>
-            )}
+                    <p style={{ color: '#00c896', fontStyle: 'italic', fontSize: '0.813rem', marginTop: '1.5rem', textAlign: 'center' }}>
+                      {result.insights.encouragement}
+                    </p>
+                  </div>
+                )}
 
-            {!isLoading && !result && !error && (
-              <div className="ai-content">
-                <p style={{ color: '#888', fontStyle: 'italic', fontSize: '0.9rem' }}>
-                  Fill in your monthly usage on the left and click Calculate — Gemini AI will build your personal reduction plan.
-                </p>
-              </div>
-            )}
+                {!isLoading && !result && !error && (
+                  <div className="ai-content">
+                    <p style={{ color: '#888', fontStyle: 'italic', fontSize: '0.9rem' }}>
+                      Fill in your monthly usage on the left and click Calculate — Gemini AI will build your personal reduction plan.
+                    </p>
+                  </div>
+                )}
 
-            {!isLoading && error && (
-              <div className="ai-content">
-                <p style={{ color: '#ef4444', fontStyle: 'italic' }}>{error}</p>
+                {!isLoading && error && (
+                  <div className="ai-content">
+                    <p style={{ color: '#ef4444', fontStyle: 'italic' }}>{error}</p>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="timeline-tab-content fade-in">
+                <CarbonHeatmap history={heatmapHistory} />
               </div>
             )}
           </div>

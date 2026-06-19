@@ -94,26 +94,19 @@ Return a JSON object with this exact shape:
     
     let result;
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 8000);
-
       result = await model.generateContent({
         contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
         generationConfig: { temperature: 0.2 }
-      }, { signal: controller.signal });
-      clearTimeout(timeoutId);
+      }, { timeout: 8000 });
     } catch (apiError) {
       if (apiError.message && apiError.message.includes('503')) {
         console.warn("Gemini API returned 503. Retrying once in 1.5s...");
         await new Promise(resolve => setTimeout(resolve, 1500));
         
-        const retryController = new AbortController();
-        const retryTimeoutId = setTimeout(() => retryController.abort(), 8000);
         result = await model.generateContent({
           contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
           generationConfig: { temperature: 0.2 }
-        }, { signal: retryController.signal });
-        clearTimeout(retryTimeoutId);
+        }, { timeout: 8000 });
       } else {
         throw apiError;
       }
@@ -121,11 +114,7 @@ Return a JSON object with this exact shape:
 
     const responseText = result.response.text().trim();
     
-    let cleanJson = responseText;
-    if (cleanJson.startsWith('```json')) cleanJson = cleanJson.substring(7);
-    if (cleanJson.startsWith('```')) cleanJson = cleanJson.substring(3);
-    if (cleanJson.endsWith('```')) cleanJson = cleanJson.substring(0, cleanJson.length - 3);
-    cleanJson = cleanJson.trim();
+    let cleanJson = responseText.replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
 
     const insights = JSON.parse(cleanJson);
 
@@ -135,7 +124,7 @@ Return a JSON object with this exact shape:
       throw new Error("Invalid AI response shape");
     }
   } catch (error) {
-    console.error("Gemini API call failed or timed out:", error.message);
+    console.error("Gemini API call failed or timed out:", error);
     // Fallback contract
     return {
       insights: FALLBACK_INSIGHTS[dominantCategory] || FALLBACK_INSIGHTS.default,
@@ -144,4 +133,39 @@ Return a JSON object with this exact shape:
   }
 }
 
-module.exports = { getPersonalizedInsights };
+async function getGoalCoaching(coachingData) {
+  const { milestone, goalPercent, goalDays, baselineCarbon, currentCarbon, daysElapsed } = coachingData;
+  const reduction = (baselineCarbon - currentCarbon).toFixed(1);
+  const pct = ((reduction / baselineCarbon) * 100).toFixed(1);
+
+  const prompt = `You are an encouraging but concise carbon reduction coach. A household has just crossed the ${milestone}% milestone of their carbon reduction goal.
+
+Their stats:
+- Goal: reduce carbon footprint by ${goalPercent}% over ${goalDays} days
+- Baseline footprint: ${baselineCarbon.toFixed(1)} kg CO₂/month
+- Current footprint: ${currentCarbon.toFixed(1)} kg CO₂/month
+- Days elapsed: ${daysElapsed} of ${goalDays}
+- Reduction so far: ${reduction} kg CO₂ (${pct}%)
+
+Write exactly 2–3 sentences:
+1. Celebrate their progress warmly and specifically
+2. Identify the single highest-impact next action they can take based on their current trajectory
+3. (Optional) End with a motivational one-liner
+
+Tone: warm, specific, not generic. No bullet points. No markdown. Plain text only.`;
+
+  try {
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
+    const result = await model.generateContent({
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      generationConfig: { temperature: 0.5 }
+    });
+    
+    return result.response.text().trim();
+  } catch (error) {
+    console.error("Gemini API call failed for goal coaching:", error);
+    return "Great progress! Keep focusing on your highest-use category to stay on track.";
+  }
+}
+
+module.exports = { getPersonalizedInsights, getGoalCoaching };

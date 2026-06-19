@@ -6,6 +6,8 @@ if (!process.env.GEMINI_API_KEY && process.env.NODE_ENV !== 'test') {
   process.exit(1);
 }
 
+console.log("Gemini key loaded: " + !!process.env.GEMINI_API_KEY);
+
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -50,6 +52,8 @@ app.use(express.json({ limit: '10kb' }));
 
 // API Routes
 app.use('/api/footprint', footprintRoutes);
+app.use('/api', require('./routes/history'));
+app.use('/api', require('./routes/goalCoaching'));
 
 
 // Serve static frontend assets

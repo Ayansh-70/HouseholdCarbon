@@ -14,7 +14,7 @@ The application splits its logic into two distinct phases for accuracy, security
 
 ### Architecture Overview
 - **Frontend (React + Vite):** A responsive, accessible single-page application built with functional components and hooks. Features a custom vanilla CSS design system utilizing glassmorphism and a premium dark mode aesthetic.
-- **Backend (Node.js + Express):** A layered REST API (Routes, Controllers, Services, Utilities). Implements strict Zod schema validation, Helmet security headers, CORS, rate limiting, and global error handling.
+- **Backend (Node.js + Express):** A layered REST API (Routes, Controllers, Services, Utilities). Implements strict Zod schema validation, Helmet security headers (with explicit Content-Security-Policy), CORS regex guard, strict IP rate limiting (15 requests per 15 minutes to balance demoability with Gemini Free Tier constraints), and global error handling.
 - **AI Integration:** Google Gemini API accessed via the official SDK server-side (`@google/generative-ai`), returning structured JSON.
 - **Containerization:** A multi-stage Dockerfile builds the static React assets and serves them securely via the Express backend in a single container.
 

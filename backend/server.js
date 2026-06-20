@@ -6,8 +6,6 @@ if (!process.env.GEMINI_API_KEY && process.env.NODE_ENV !== 'test') {
   process.exit(1);
 }
 
-console.log("Gemini key loaded: " + !!process.env.GEMINI_API_KEY);
-
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -35,6 +33,7 @@ app.use(
 
 // Restrict CORS (in a real app, specify exact origins, here we allow dev origins and self)
 const allowedOrigins = ['http://localhost:5173', 'http://127.0.0.1:5173', process.env.FRONTEND_URL].filter(Boolean);
+// Strict regex to safely match localhost ports while preventing lookalike domains like localhost.attacker.com from bypassing string match checks
 const localhostPattern = /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/;
 
 app.use(cors({
@@ -68,6 +67,11 @@ app.get(/(.*)/, (req, res) => {
 // Global error handler so stack traces don't leak to client
 app.use((err, req, res, next) => {
   console.error("Unhandled error:", err.message);
+  
+  if (err.type === 'entity.too.large') {
+    return res.status(413).json({ success: false, error: "Payload Too Large" });
+  }
+  
   res.status(500).json({ success: false, error: "Internal Server Error" });
 });
 

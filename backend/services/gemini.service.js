@@ -51,8 +51,25 @@ const FALLBACK_INSIGHTS = {
   }
 };
 
+const GLOBAL_RATE_LIMIT = 12; // Max 12 requests per minute globally
+const GLOBAL_RATE_WINDOW_MS = 60 * 1000; // 1 minute
+let requestTimestamps = [];
+
+function checkGlobalRateLimit() {
+  const now = Date.now();
+  // Clean up timestamps older than the 1-minute window
+  requestTimestamps = requestTimestamps.filter(timestamp => now - timestamp < GLOBAL_RATE_WINDOW_MS);
+  
+  if (requestTimestamps.length >= GLOBAL_RATE_LIMIT) {
+    return false; // Limit exceeded
+  }
+  
+  requestTimestamps.push(now);
+  return true; // OK
+}
+
 async function getPersonalizedInsights(footprintData) {
-  const { breakdown, householdSize, electricity_co2, gas_co2, water_co2, total, per_capita, fuel_type } = footprintData;
+  const { breakdown, householdSize, electricityCo2, gasCo2, waterCo2, total, perCapita, fuelType } = footprintData;
 
   // Provide sensible fallbacks for potentially missing data
   const safeBreakdown = breakdown || {};
@@ -61,12 +78,12 @@ async function getPersonalizedInsights(footprintData) {
   const w_raw = safeBreakdown.water ?? 0;
   const h_size = householdSize ?? 1;
   
-  const e_co2 = electricity_co2 ?? 0;
-  const g_co2 = gas_co2 ?? 0;
-  const w_co2 = water_co2 ?? 0;
+  const e_co2 = electricityCo2 ?? 0;
+  const g_co2 = gasCo2 ?? 0;
+  const w_co2 = waterCo2 ?? 0;
   const t_co2 = total ?? 0;
-  const p_co2 = per_capita ?? 0;
-  const f_type = fuel_type || 'unknown';
+  const p_co2 = perCapita ?? 0;
+  const f_type = fuelType || 'unknown';
 
   let dominantCategory = 'electricity';
   let maxAmount = e_co2;
@@ -109,6 +126,15 @@ Return a JSON object with this exact shape:
     };
   }
 
+  // Check global rate limit before calling API
+  if (!checkGlobalRateLimit()) {
+    console.warn("GLOBAL RATE LIMIT EXCEEDED. Returning fallback insights.");
+    return {
+      insights: FALLBACK_INSIGHTS[dominantCategory] || FALLBACK_INSIGHTS.default,
+      source: 'fallback'
+    };
+  }
+
   try {
     const model = genAI.getGenerativeModel({ 
       model: "gemini-2.5-flash-lite",
@@ -122,6 +148,9 @@ Return a JSON object with this exact shape:
         generationConfig: { temperature: 0.2 }
       }, { timeout: 8000 });
     } catch (apiError) {
+      // We explicitly check for 503 Service Unavailable, which is a transient
+      // server error that often resolves on immediate retry. 400, 401, or 404
+      // indicate persistent client/auth issues and should not be retried.
       if (apiError.message && apiError.message.includes('503')) {
         console.warn("Gemini API returned 503. Retrying once in 1.5s...");
         await new Promise(resolve => setTimeout(resolve, 1500));

@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { useScrollReveal } from '../hooks/useScrollReveal';
 
 export default function RevealOnScroll({ children, delay = 0, className = '', style = {}, as: Component = 'div' }) {

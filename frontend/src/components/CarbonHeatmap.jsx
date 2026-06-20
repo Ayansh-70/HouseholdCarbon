@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import './CarbonHeatmap.css';
 
 const WEEKS = 13;
@@ -51,8 +51,6 @@ export default function CarbonHeatmap({ history = [] }) {
     // Columns are weeks, rows are days of the week (Sunday -> Saturday)
     for (let col = 0; col < WEEKS; col++) {
       const weekCol = [];
-      let monthChangedInWeek = false;
-
       for (let row = 0; row < DAYS_PER_WEEK; row++) {
         const currentCellDate = new Date(startDate);
         currentCellDate.setDate(startDate.getDate() + (col * 7) + row);
@@ -60,7 +58,6 @@ export default function CarbonHeatmap({ history = [] }) {
         // Month label logic (anchor it to the first week a month changes)
         if (currentCellDate.getMonth() !== currentMonth && currentCellDate.getDate() <= 7) {
           currentMonth = currentCellDate.getMonth();
-          monthChangedInWeek = true;
           labels.push({ col, label: currentCellDate.toLocaleString('default', { month: 'short' }) });
         }
 
@@ -112,7 +109,7 @@ export default function CarbonHeatmap({ history = [] }) {
             <div className="heatmap-grid">
               {grid.map((week, weekIndex) => (
                 <div key={weekIndex} className="heatmap-col">
-                  {week.map((day, dayIndex) => (
+                  {week.map((day) => (
                     <div 
                       key={day.dateStr}
                       className={`heatmap-cell level-${day.level} ${day.isFuture ? 'future' : ''} ${selectedDay?.dateStr === day.dateStr ? 'selected' : ''}`}

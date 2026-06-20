@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { THEME_COLORS } from '../utils/theme';
 
 // Assuming base URL from standard React Vite pattern (empty string for relative/proxy)

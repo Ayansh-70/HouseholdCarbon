@@ -1,4 +1,4 @@
-import React from 'react';
+/* global vi, describe, beforeEach, it, expect */
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import Workspace from '../components/Workspace';
 import * as api from '../services/api';
@@ -9,6 +9,28 @@ vi.mock('../services/api', () => ({
   fetchHeatmapHistory: vi.fn().mockResolvedValue([]),
   fetchGoalCoaching: vi.fn().mockResolvedValue("Mock coaching message")
 }));
+
+Object.defineProperty(window, 'matchMedia', {
+  writable: true,
+  value: vi.fn().mockImplementation(query => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  })),
+});
+
+// Mock IntersectionObserver
+class MockIntersectionObserver {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+window.IntersectionObserver = MockIntersectionObserver;
 
 describe('Workspace Component', () => {
   beforeEach(() => {

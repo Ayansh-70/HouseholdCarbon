@@ -11,6 +11,8 @@
  * - electric, gas, none: 1.0x
  */
 
+// These are illustrative national-average emission factors chosen for simplicity.
+// In a real application, electricity intensity would vary significantly by local power grid.
 const FACTORS = {
   electricity: 0.4,
   naturalGas: 5.3,
@@ -27,7 +29,8 @@ function calculateFootprint(data) {
 
   let heatingAdjustment = 0;
   if (heatingFuel === 'oil') {
-    // 25% additional emissions on heating-relevant utilities
+    // 25% additional emissions penalty. Scope: applied only to electricity and natural gas (not water)
+    // because water usage emissions are generally decoupled from the household's primary space-heating inefficiency.
     heatingAdjustment = Math.round(((electricityCO2e + naturalGasCO2e) * 0.25) * 100) / 100;
   }
 

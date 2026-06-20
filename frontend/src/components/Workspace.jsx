@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { submitFootprintData, fetchHeatmapHistory } from '../services/api';
 import CarbonHeatmap from './CarbonHeatmap';
 import GoalTracker from './GoalTracker';
@@ -51,18 +51,25 @@ function useAnimatedNumber(targetValue, duration = 600) {
     animFrame.current = requestAnimationFrame(animate);
 
     return () => cancelAnimationFrame(animFrame.current);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [targetValue, duration]);
 
   return value;
 }
 
 function Workspace() {
-  const [formData, setFormData] = useState({
-    electricity: '',
-    naturalGas: '',
-    water: '',
-    householdSize: '',
-    heatingFuel: 'LPG'
+  const [formData, setFormData] = useState(() => {
+    const saved = localStorage.getItem('hc_last_session');
+    if (saved) {
+      try { return JSON.parse(saved); } catch { /* ignore and fallback to default */ }
+    }
+    return {
+      electricity: '',
+      naturalGas: '',
+      water: '',
+      householdSize: '',
+      heatingFuel: 'LPG'
+    };
   });
 
   const [liveMetrics, setLiveMetrics] = useState({ total: 0, perCapita: 0 });
@@ -71,7 +78,7 @@ function Workspace() {
   const [loadingText, setLoadingText] = useState("Analyzing your footprint...");
   const [error, setError] = useState(null);
   const [result, setResult] = useState(null);
-  const [showBanner, setShowBanner] = useState(false);
+  const [showBanner, setShowBanner] = useState(() => !!localStorage.getItem('hc_last_session'));
   const [badgeText, setBadgeText] = useState("✦ GEMINI CONTEXT");
 
   const [activeTab, setActiveTab] = useState('summary');
@@ -84,18 +91,8 @@ function Workspace() {
   const animatedTotal = useAnimatedNumber(liveMetrics.total);
   const animatedPerCapita = useAnimatedNumber(liveMetrics.perCapita);
 
-  // Load from localStorage on mount
+  // Load heatmap history on mount
   useEffect(() => {
-    const saved = localStorage.getItem('hc_last_session');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        setFormData(parsed);
-        setShowBanner(true);
-      } catch(e) {}
-    }
-
-    // Load heatmap history
     fetchHeatmapHistory().then(data => {
       setHeatmapHistory(data);
       if (data.length > 0) {
@@ -144,7 +141,6 @@ function Workspace() {
     if (isLoading) {
       const messages = ["Analyzing your footprint...", "Consulting Gemini AI...", "Building your reduction plan..."];
       let i = 0;
-      setLoadingText(messages[0]);
       interval = setInterval(() => {
         i = (i + 1) % messages.length;
         setLoadingText(messages[i]);

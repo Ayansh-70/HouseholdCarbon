@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { compareToAverage } from '../utils/nationalAverage';
 import { THEME_COLORS } from '../utils/theme';
 

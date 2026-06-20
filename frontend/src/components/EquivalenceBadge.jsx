@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import { getEquivalent } from '../utils/carbonEquivalents';
 import { THEME_COLORS } from '../utils/theme';
 

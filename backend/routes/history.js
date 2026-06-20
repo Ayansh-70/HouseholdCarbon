@@ -3,7 +3,7 @@ const { historyStore } = require('../controllers/footprint.controller');
 
 const router = express.Router();
 
-router.get('/history', (req, res) => {
+router.get('/history', (req, res, next) => {
   try {
     // Map the internal history store to the exact format required by the heatmap
     // Schema required: [{ date, totalCarbon, electricity, gas, water }]
@@ -30,7 +30,7 @@ router.get('/history', (req, res) => {
     });
   } catch (error) {
     console.error("Error in GET /history:", error);
-    return res.status(500).json({ success: false, error: "Failed to retrieve history" });
+    next(error);
   }
 });
 

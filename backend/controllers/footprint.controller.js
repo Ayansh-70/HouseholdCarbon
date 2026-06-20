@@ -5,7 +5,7 @@ const crypto = require('crypto');
 // In-memory store (as allowed per instructions). Note: will reset on server restart.
 const historyStore = [];
 
-async function submitFootprint(req, res) {
+async function submitFootprint(req, res, next) {
   try {
     const inputData = req.body;
 
@@ -21,12 +21,12 @@ async function submitFootprint(req, res) {
         water: inputData.water
       },
       householdSize: inputData.householdSize,
-      electricity_co2: calculation.breakdown.electricity,
-      gas_co2: calculation.breakdown.naturalGas,
-      water_co2: calculation.breakdown.water,
+      electricityCo2: calculation.breakdown.electricity,
+      gasCo2: calculation.breakdown.naturalGas,
+      waterCo2: calculation.breakdown.water,
       total: calculation.totalCO2e,
-      per_capita: calculation.perCapitaCO2e,
-      fuel_type: inputData.heatingFuel || 'unknown'
+      perCapita: calculation.perCapitaCO2e,
+      fuelType: inputData.heatingFuel || 'unknown'
     };
     
     const { insights, source } = await getPersonalizedInsights(aiData);
@@ -51,14 +51,11 @@ async function submitFootprint(req, res) {
 
   } catch (error) {
     console.error("Error in submitFootprint:", error);
-    return res.status(500).json({ 
-      success: false, 
-      error: "An internal server error occurred while processing the footprint." 
-    });
+    next(error);
   }
 }
 
-function getHistory(req, res) {
+function getHistory(req, res, next) {
   return res.status(200).json({
     success: true,
     data: historyStore

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import './GoalTracker.css';
 
 export default function GoalTracker({ hookState }) {
@@ -41,6 +41,7 @@ export default function GoalTracker({ hookState }) {
   }
 
   // Active goal UI
+  // eslint-disable-next-line react-hooks/purity
   const daysSinceStart = Math.floor((Date.now() - new Date(goal.goalSetAt).getTime()) / (1000 * 60 * 60 * 24));
   const daysLeft = Math.max(0, goal.goalDays - daysSinceStart);
   

@@ -1,4 +1,4 @@
-import React from 'react';
+
 import BackgroundEffects from './components/BackgroundEffects';
 import Navigation from './components/Navigation';
 import Hero from './components/Hero';

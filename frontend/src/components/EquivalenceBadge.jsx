@@ -4,18 +4,8 @@ import { THEME_COLORS } from '../utils/theme';
 
 export default function EquivalenceBadge({ kgCO2, seedIndex = 0 }) {
   // Use the passed seed index to pick the comparison consistently for this submission
-  const equivalence = useMemo(() => {
-    const options = [
-      { text: (n) => `= ${Math.round(kgCO2 / 21)} trees working all year to absorb this` },
-      { text: (n) => `= driving ${Math.round(kgCO2 / 0.12)} km in a petrol car` },
-      { text: (n) => `= charging your phone ${Math.round(kgCO2 / 0.005)} times` },
-      { text: (n) => `= running an LED bulb for ${Math.round(kgCO2 / 0.004)} hours` }
-    ];
-    return {
-      text: options[seedIndex % options.length].text(),
-      icon: '🌱'
-    };
-  }, [kgCO2, seedIndex]);
+  // Logic and readability filter is now in carbonEquivalents.js
+  const equivalence = useMemo(() => getEquivalent(kgCO2, seedIndex), [kgCO2, seedIndex]);
 
   return (
     <div style={{

@@ -13,10 +13,20 @@ async function submitFootprint(req, res) {
     const calculation = calculateFootprint(inputData);
 
     // 2. Fetch AI Insights
-    // Only pass breakdown and household size to AI, no PII.
+    // Pass raw inputs as breakdown and calculated co2 fields to aiData
     const aiData = {
-      breakdown: calculation.breakdown,
-      householdSize: inputData.householdSize
+      breakdown: {
+        electricity: inputData.electricity,
+        naturalGas: inputData.naturalGas,
+        water: inputData.water
+      },
+      householdSize: inputData.householdSize,
+      electricity_co2: calculation.breakdown.electricity,
+      gas_co2: calculation.breakdown.naturalGas,
+      water_co2: calculation.breakdown.water,
+      total: calculation.totalCO2e,
+      per_capita: calculation.perCapitaCO2e,
+      fuel_type: inputData.heatingFuel || 'unknown'
     };
     
     const { insights, source } = await getPersonalizedInsights(aiData);

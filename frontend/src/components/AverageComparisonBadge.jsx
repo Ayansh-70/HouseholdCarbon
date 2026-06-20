@@ -23,7 +23,7 @@ export default function AverageComparisonBadge({ kgCO2 }) {
       whiteSpace: 'nowrap',
       fontWeight: '500'
     }}>
-      <span>{percent}% {direction} average {arrow}</span>
+      <span>{percent}% {direction} India avg {arrow}</span>
     </div>
   );
 }

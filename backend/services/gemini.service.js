@@ -54,20 +54,34 @@ const FALLBACK_INSIGHTS = {
 async function getPersonalizedInsights(footprintData) {
   const { breakdown, householdSize, electricity_co2, gas_co2, water_co2, total, per_capita, fuel_type } = footprintData;
 
+  // Provide sensible fallbacks for potentially missing data
+  const safeBreakdown = breakdown || {};
+  const e_raw = safeBreakdown.electricity ?? 0;
+  const g_raw = safeBreakdown.naturalGas ?? 0;
+  const w_raw = safeBreakdown.water ?? 0;
+  const h_size = householdSize ?? 1;
+  
+  const e_co2 = electricity_co2 ?? 0;
+  const g_co2 = gas_co2 ?? 0;
+  const w_co2 = water_co2 ?? 0;
+  const t_co2 = total ?? 0;
+  const p_co2 = per_capita ?? 0;
+  const f_type = fuel_type || 'unknown';
+
   let dominantCategory = 'electricity';
-  let maxAmount = breakdown.electricity || 0;
-  if ((breakdown.naturalGas || 0) > maxAmount) { maxAmount = breakdown.naturalGas; dominantCategory = 'naturalGas'; }
-  if ((breakdown.water || 0) > maxAmount) { maxAmount = breakdown.water; dominantCategory = 'water'; }
+  let maxAmount = e_co2;
+  if (g_co2 > maxAmount) { maxAmount = g_co2; dominantCategory = 'naturalGas'; }
+  if (w_co2 > maxAmount) { maxAmount = w_co2; dominantCategory = 'water'; }
 
   const systemPrompt = `You are an environmental data analyst specializing in residential carbon reduction. You receive structured household consumption data and return a prioritized action plan. Always respond in valid JSON only. No preamble, no markdown, no explanation outside the JSON structure.`;
 
   const userPrompt = `Household data:
-- Monthly electricity: ${breakdown.electricity} kWh (CO₂e: ${electricity_co2} kg)
-- Monthly heating fuel: ${breakdown.naturalGas} therms of ${fuel_type} (CO₂e: ${gas_co2} kg)
-- Monthly water: ${breakdown.water} liters (CO₂e: ${water_co2} kg)
-- Household size: ${householdSize} people
-- Total monthly footprint: ${total} kg CO₂e
-- Per-capita footprint: ${per_capita} kg CO₂e/person
+- Monthly electricity: ${e_raw} kWh (CO₂e: ${e_co2} kg)
+- Monthly heating fuel: ${g_raw} therms of ${f_type} (CO₂e: ${g_co2} kg)
+- Monthly water: ${w_raw} liters (CO₂e: ${w_co2} kg)
+- Household size: ${h_size} people
+- Total monthly footprint: ${t_co2} kg CO₂e
+- Per-capita footprint: ${p_co2} kg CO₂e/person
 - Global average for reference: 375 kg CO₂e/month
 
 Return a JSON object with this exact shape:
@@ -85,6 +99,15 @@ Return a JSON object with this exact shape:
   ],
   "encouragement": "One short motivational sentence tailored to their specific data"
 }`;
+
+  // Defensive guard: validate that no literal 'undefined' string leaked into the prompt
+  if (userPrompt.includes('undefined') || userPrompt.includes('null')) {
+    console.error("CRITICAL: userPrompt contains 'undefined' or 'null'. Falling back to avoid broken AI response.");
+    return {
+      insights: FALLBACK_INSIGHTS[dominantCategory] || FALLBACK_INSIGHTS.default,
+      source: 'fallback'
+    };
+  }
 
   try {
     const model = genAI.getGenerativeModel({ 

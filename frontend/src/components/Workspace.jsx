@@ -6,6 +6,7 @@ import { useGoal } from '../hooks/useGoal';
 import EquivalenceBadge from './EquivalenceBadge';
 import AverageComparisonBadge from './AverageComparisonBadge';
 import RevealOnScroll from './RevealOnScroll';
+import { BENCHMARKS } from '../utils/nationalAverage';
 
 // Emission factors
 const EMISSION_FACTORS = {
@@ -126,6 +127,16 @@ function Workspace() {
 
     return () => clearTimeout(timeoutId);
   }, [formData]);
+
+  // Check for undefined leaks in AI response
+  useEffect(() => {
+    if (result && result.insights) {
+      const jsonStr = JSON.stringify(result.insights).toLowerCase();
+      if (jsonStr.includes('undefined')) {
+        console.warn("WARNING: AI insights contain literal 'undefined' string, indicating a backend prompt formatting issue.", result.insights);
+      }
+    }
+  }, [result]);
 
   // Handle loading text cycle
   useEffect(() => {
@@ -379,9 +390,9 @@ function Workspace() {
                   <div className="benchmark-zone red"></div>
                   
                   {/* Global refs */}
-                  <div className="benchmark-ref" style={{ left: '10%' }}>India (145)</div>
-                  <div className="benchmark-ref" style={{ left: '25%' }}>Paris (208)</div>
-                  <div className="benchmark-ref" style={{ left: '60%' }}>Global (375)</div>
+                  <div className="benchmark-ref" style={{ left: '10%' }}>India ({BENCHMARKS.INDIA})</div>
+                  <div className="benchmark-ref" style={{ left: '25%' }}>Paris ({BENCHMARKS.PARIS})</div>
+                  <div className="benchmark-ref" style={{ left: '60%' }}>Global ({BENCHMARKS.GLOBAL})</div>
 
                   {/* User marker - cap at 100% */}
                   <div className="benchmark-marker" style={{ left: `${Math.min(100, (liveMetrics.total / 600) * 100)}%` }}>

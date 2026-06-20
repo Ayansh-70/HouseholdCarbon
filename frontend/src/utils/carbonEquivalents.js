@@ -1,5 +1,11 @@
 export const MAX_READABLE_VALUE = 5000;
 
+/**
+ * Converts a carbon footprint value into a relatable real-world equivalent (e.g. trees, driving).
+ * @param {number} kgCO2 - The carbon footprint in kg CO2e
+ * @param {number} [seedIndex=0] - An optional seed to deterministically select the equivalent type
+ * @returns {{text: string, icon: string}} An object containing the descriptive text and an emoji icon
+ */
 export function getEquivalent(kgCO2, seedIndex = 0) {
   const options = [
     {

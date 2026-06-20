@@ -54,7 +54,7 @@ app.use(express.json({ limit: '10kb' }));
 app.use('/api/footprint', footprintRoutes);
 app.use('/api', require('./routes/history'));
 app.use('/api', require('./routes/goalCoaching'));
-
+app.use('/api', require('./routes/dailyTip'));
 
 // Serve static frontend assets
 const staticPath = path.join(__dirname, 'public/dist');

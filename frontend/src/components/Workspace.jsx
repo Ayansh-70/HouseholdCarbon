@@ -3,6 +3,8 @@ import { submitFootprintData, fetchHeatmapHistory } from '../services/api';
 import CarbonHeatmap from './CarbonHeatmap';
 import GoalTracker from './GoalTracker';
 import { useGoal } from '../hooks/useGoal';
+import EquivalenceBadge from './EquivalenceBadge';
+import AverageComparisonBadge from './AverageComparisonBadge';
 
 // Emission factors
 const EMISSION_FACTORS = {
@@ -340,6 +342,14 @@ function Workspace() {
               {animatedTotal.toFixed(2)}
               <span className="score-unit">CO₂e kg</span>
             </div>
+            
+            {/* Context Row for Equivalence and National Average */}
+            {liveMetrics.total > 0 && (
+              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginTop: '12px' }}>
+                <EquivalenceBadge kgCO2={liveMetrics.total} />
+                <AverageComparisonBadge kgCO2={liveMetrics.total} />
+              </div>
+            )}
           </div>
           
           <div className="bento-card">

@@ -6,18 +6,20 @@ import Workspace from './components/Workspace';
 import FooterReveal from './components/FooterReveal';
 
 import DailyTipBanner from './components/DailyTipBanner';
+import RevealOnScroll from './components/RevealOnScroll';
 
 function App() {
   return (
     <>
       <BackgroundEffects />
       <Navigation />
-      <DailyTipBanner />
-      
       <div id="content">
         <Hero />
+        <DailyTipBanner />
         <Workspace />
-        <FooterReveal />
+        <RevealOnScroll delay={0}>
+          <FooterReveal />
+        </RevealOnScroll>
       </div>
     </>
   );

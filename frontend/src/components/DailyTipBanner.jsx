@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { THEME_COLORS } from '../utils/theme';
 
 // Assuming base URL from standard React Vite pattern (empty string for relative/proxy)
 const API_BASE_URL = import.meta.env.VITE_API_URL || '';
@@ -30,13 +31,14 @@ export default function DailyTipBanner() {
       justifyContent: 'space-between',
       width: '100%',
       height: '40px',
-      background: '#111827', // Muted slate from dark theme
-      borderBottom: '0.5px solid rgba(255, 255, 255, 0.1)',
+      background: THEME_COLORS.surface.bg, // Updated to use theme surface color
+      backdropFilter: 'blur(20px)',
+      borderBottom: `1px solid ${THEME_COLORS.surface.border}`, // Updated border
       padding: '0 20px',
       boxSizing: 'border-box',
-      color: '#aaa',
+      color: THEME_COLORS.surface.textSecondary, // Updated text color
       fontSize: '13px',
-      zIndex: 40 // Sit above hero but below nav
+      zIndex: 40 // Nav is 50, Hero is 10/relative. 40 keeps it safely below nav.
     }}>
       <div style={{
         display: 'flex',
@@ -54,7 +56,7 @@ export default function DailyTipBanner() {
           textOverflow: 'ellipsis',
           whiteSpace: 'nowrap'
         }}>
-          <strong>Eco Tip:</strong> {tip}
+          <strong style={{ color: 'var(--text-primary)' }}>Eco Tip:</strong> {tip}
         </span>
       </div>
       <button 
@@ -62,7 +64,7 @@ export default function DailyTipBanner() {
         style={{
           background: 'none',
           border: 'none',
-          color: '#888',
+          color: THEME_COLORS.surface.textSecondary,
           cursor: 'pointer',
           fontSize: '16px',
           padding: '4px',

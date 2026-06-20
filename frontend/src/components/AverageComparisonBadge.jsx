@@ -1,12 +1,12 @@
 import React from 'react';
 import { compareToAverage } from '../utils/nationalAverage';
+import { THEME_COLORS } from '../utils/theme';
 
 export default function AverageComparisonBadge({ kgCO2 }) {
   const { percent, direction } = compareToAverage(kgCO2);
 
   const isBelow = direction === 'below';
-  const bgColor = isBelow ? 'rgba(0, 200, 150, 0.1)' : 'rgba(245, 166, 35, 0.1)';
-  const textColor = isBelow ? '#00c896' : '#f5a623';
+  const theme = isBelow ? THEME_COLORS.success : THEME_COLORS.warning;
   const arrow = isBelow ? '↓' : '↑';
 
   return (
@@ -15,8 +15,9 @@ export default function AverageComparisonBadge({ kgCO2 }) {
       alignItems: 'center',
       gap: '4px',
       fontSize: '13px',
-      color: textColor,
-      background: bgColor,
+      color: theme.text,
+      background: theme.bg,
+      border: `1px solid ${theme.border}`,
       padding: '4px 10px',
       borderRadius: '20px',
       whiteSpace: 'nowrap',

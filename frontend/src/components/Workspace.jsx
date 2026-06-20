@@ -5,6 +5,7 @@ import GoalTracker from './GoalTracker';
 import { useGoal } from '../hooks/useGoal';
 import EquivalenceBadge from './EquivalenceBadge';
 import AverageComparisonBadge from './AverageComparisonBadge';
+import RevealOnScroll from './RevealOnScroll';
 
 // Emission factors
 const EMISSION_FACTORS = {
@@ -75,6 +76,7 @@ function Workspace() {
   const [activeTab, setActiveTab] = useState('summary');
   const [heatmapHistory, setHeatmapHistory] = useState([]);
   const [submittedCarbon, setSubmittedCarbon] = useState(null);
+  const [badgeSeed, setBadgeSeed] = useState(0);
 
   const goalHook = useGoal(submittedCarbon);
 
@@ -210,6 +212,9 @@ function Workspace() {
       // Flash badge
       setBadgeText("✦ UPDATED");
       setTimeout(() => setBadgeText("✦ GEMINI CONTEXT"), 2000);
+      
+      // Update badge seed to trigger a new random equivalence type on successful submission
+      setBadgeSeed(Math.floor(Math.random() * 100));
 
     } catch (err) {
       setError(err.message || 'Failed to finalize calculation request pipelines.');
@@ -244,7 +249,8 @@ function Workspace() {
           <h3 className="panel-title">Resource Ledger</h3>
           <p className="panel-subtitle">Enter your monthly home usage below.</p>
           
-          <form id="footprint-form" onSubmit={handleSubmit} noValidate>
+          <RevealOnScroll delay={0}>
+            <form id="footprint-form" onSubmit={handleSubmit} noValidate>
             <div className="form-group">
               <label htmlFor="electricity">MONTHLY ELECTRICITY USE (kWh)</label>
               <input 
@@ -329,14 +335,17 @@ function Workspace() {
               </button>
             </div>
           </form>
+          </RevealOnScroll>
 
-          <GoalTracker hookState={goalHook} />
+          <RevealOnScroll delay={0}>
+            <GoalTracker hookState={goalHook} />
+          </RevealOnScroll>
         </div>
         
         {/* Real-Time Premium Bento Presentation Output Panel Grid */}
         <div className="bento-grid">
           
-          <div className="bento-card">
+          <RevealOnScroll delay={0} className="bento-card">
             <p className="card-label">Absolute Total Footprint</p>
             <div className="score-display" style={{ color: totalColor, transition: 'color 0.5s ease' }}>
               {animatedTotal.toFixed(2)}
@@ -346,22 +355,22 @@ function Workspace() {
             {/* Context Row for Equivalence and National Average */}
             {liveMetrics.total > 0 && (
               <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginTop: '12px' }}>
-                <EquivalenceBadge kgCO2={liveMetrics.total} />
+                <EquivalenceBadge kgCO2={liveMetrics.total} seedIndex={badgeSeed} />
                 <AverageComparisonBadge kgCO2={liveMetrics.total} />
               </div>
             )}
-          </div>
+          </RevealOnScroll>
           
-          <div className="bento-card">
+          <RevealOnScroll delay={100} className="bento-card">
             <p className="card-label">Per-Capita Allocation</p>
             <div className="score-display">
               {animatedPerCapita.toFixed(2)}
               <span className="score-unit">kg/person</span>
             </div>
-          </div>
+          </RevealOnScroll>
 
           {showBenchmark && (
-            <div className="bento-card col-span-2 fade-in" style={{ paddingBottom: '3rem' }}>
+            <RevealOnScroll delay={200} className="bento-card col-span-2 fade-in" style={{ paddingBottom: '3rem' }}>
               <p className="card-label" style={{ color: '#00c896', fontSize: '0.7rem', letterSpacing: '0.05em' }}>MONTHLY HOUSEHOLD BENCHMARK</p>
               <div className="benchmark-container">
                 <div className="benchmark-bar-wrapper">
@@ -380,10 +389,10 @@ function Workspace() {
                   </div>
                 </div>
               </div>
-            </div>
+            </RevealOnScroll>
           )}
           
-          <div className="bento-card col-span-2 ai-advisor-card">
+          <RevealOnScroll delay={300} className="bento-card col-span-2 ai-advisor-card">
             <div className="dashboard-tabs">
               <button className={`tab-btn ${activeTab === 'summary' ? 'active' : ''}`} onClick={() => setActiveTab('summary')}>AI Summary</button>
               <button className={`tab-btn ${activeTab === 'timeline' ? 'active' : ''}`} onClick={() => setActiveTab('timeline')}>Timeline</button>
@@ -457,7 +466,7 @@ function Workspace() {
                 <CarbonHeatmap history={heatmapHistory} />
               </div>
             )}
-          </div>
+          </RevealOnScroll>
         </div>
         
       </div>

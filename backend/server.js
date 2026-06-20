@@ -21,7 +21,7 @@ app.use(
       directives: {
         defaultSrc: ["'self'"],
         connectSrc: ["'self'", "https://d8j0ntlcm91z4.cloudfront.net"],
-        mediaSrc: ["'self'", "https://d8j0ntlcm91z4.cloudfront.net"],
+        mediaSrc: ["'self'", "https://d8j0ntlcm91z4.cloudfront.net", "blob:"],
         imgSrc: ["'self'", "data:", "blob:"],
         styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
         fontSrc: ["'self'", "https://fonts.gstatic.com"],
